@@ -22,10 +22,30 @@ securityDefinitions:
       project: Project Manager scope
       company: CLA Manager scope
       contrib: Contributor scope
+  BearerSecurity:
+    type: apiKey
+    name: Authorization
+    in: header
 tags:
   - name: services
 
 paths:
+  /bearerauthtest:
+    get:
+      summary: API to test bearer auth
+      security:
+        - BearerSecurity: []
+      operationId: bearerAuthTest
+      responses:
+        '200':
+          description: 'Success'
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+      tags:
+        - authtest
   /ops/health:
     get:
       summary: API Health Check

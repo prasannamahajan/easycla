@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"github.com/communitybridge/easycla/cla-backend-go/gen/restapi/operations/authtest"
+	"github.com/go-openapi/runtime/middleware"
 	"net/http"
 	"net/url"
 	"os"
@@ -156,6 +158,8 @@ func server(localMode bool) http.Handler {
 	}
 
 	api.OauthSecurityAuth = authorizer.SecurityAuth
+	api.BearerSecurityAuth = authorizer.SecurityBearerAuth
+	setupTestBearerauth(api)
 	users.Configure(api, usersService)
 	health.Configure(api, healthService)
 	template.Configure(api, templateService)
@@ -332,3 +336,10 @@ func setupSessionHandler(next http.Handler, sessionStore *dynastore.Store) http.
 	})
 }
 */
+
+func setupTestBearerauth(api *operations.ClaAPI) {
+	api.AuthtestBearerAuthTestHandler = authtest.BearerAuthTestHandlerFunc(
+		func(params authtest.BearerAuthTestParams, claUser *user.CLAUser) middleware.Responder {
+			return authtest.NewBearerAuthTestOK().WithPayload(&authtest.BearerAuthTestOKBody{Username: claUser.LFUsername})
+		})
+}

@@ -5,6 +5,7 @@ package auth
 
 import (
 	"errors"
+	"strings"
 
 	log "github.com/communitybridge/easycla/cla-backend-go/logging"
 
@@ -100,4 +101,35 @@ func (a Authorizer) SecurityAuth(token string, scopes []string) (*user.CLAUser, 
 	}
 
 	return &user, nil
+}
+
+func (a Authorizer) SecurityBearerAuth(header string) (*user.CLAUser, error) {
+	if !strings.HasPrefix(header, "Bearer") {
+			return nil, errors.New("token does not start with Bearer")
+		}
+	s := strings.Split(header, " ")
+	if len(s) != 2 {
+			return nil, errors.New("Invalid token")
+	}
+	token := s[1]
+	// Verify the token is valid
+	claims, err := a.authValidator.VerifyToken(token)
+	if err != nil {
+		log.Warnf("SecurityBearerAuth - verify token error: %+v", err)
+		return nil, err
+	}
+
+	// Get the username from the token claims
+	usernameClaim, ok := claims[a.authValidator.usernameClaim]
+	if !ok {
+		log.Warnf("SecurityBearerAuth - username not found, error: %+v", err)
+		return nil, errors.New("username not found")
+	}
+
+	username, ok := usernameClaim.(string)
+	if !ok {
+		log.Warnf("SecurityBearerAuth - invalid username, error: %+v", err)
+		return nil, errors.New("invalid username")
+	}
+	return &user.CLAUser{LFUsername:username}, nil
 }
