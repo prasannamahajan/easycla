@@ -272,6 +272,20 @@ functions:
       include:
         - ./metrics-aws-lambda
 
+  saveMetrics:
+    description: "EasyCLA Save Metrics"
+    runtime: go1.x
+    handler: metrics-aws-lambda
+    events:
+      - schedule:
+          description: 'A function that gathers metrics on a given schedule'
+          rate: rate(1 hour)
+          enabled: true
+    package:
+      individually: true
+      include:
+        - ./metrics-aws-lambda
+
 resources:
   Resources:
     # ApiGatewayRestApi, and GatewayResponse are used to enable Cors on custom authorizer responses.

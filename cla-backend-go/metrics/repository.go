@@ -811,7 +811,6 @@ func (repo *repo) GetProjectMetrics() ([]*ProjectMetric, error) {
 	}
 	return projectMetrics, nil
 }
-
 func (repo *repo) GetCompanyMetric(companyID string) (*CompanyMetric, error) {
 	var out CompanyMetric
 	err := repo.getMetricByID(companyID, MetricTypeCompany, &out)
