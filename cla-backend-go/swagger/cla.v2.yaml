@@ -518,6 +518,8 @@ paths:
           $ref: '#/responses/forbidden'
         '404':
           $ref: '#/responses/not-found'
+        '500':
+          $ref: '#/responses/internal-server-error'
       tags:
         - events
 
@@ -549,6 +551,8 @@ paths:
           $ref: '#/responses/forbidden'
         '404':
           $ref: '#/responses/not-found'
+        '500':
+          $ref: '#/responses/internal-server-error'
       tags:
         - events
 
@@ -1369,11 +1373,10 @@ definitions:
     title: Health Status
 
   event-list:
-    x-go-type:
-      import:
-        package: "github.com/communitybridge/easycla/cla-backend-go/gen/models"
-        alias: "v1models"
-      type: "EventList"
+    $ref: './common/event-list.yaml'
+
+  event:
+    $ref: './common/event.yaml'
 
   github-repository-input:
     x-go-type:
