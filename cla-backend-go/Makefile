@@ -28,6 +28,8 @@ setup_dev:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 	go get -u golang.org/x/tools/cmd/goimports
 	go get golang.org/x/tools/cmd/cover
+	npm install -g multi-file-swagger
+
 
 setup_deploy:
 	npm install serverless

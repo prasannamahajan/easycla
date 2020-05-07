@@ -846,6 +846,8 @@ paths:
           $ref: '#/responses/unauthorized'
         '403':
           $ref: '#/responses/forbidden'
+        '500':
+          $ref: '#/responses/internal-server-error'
       tags:
         - signatures
 
@@ -1210,6 +1212,10 @@ responses:
     description: Not found
     schema:
       $ref: '#/definitions/error-response'
+  internal-server-error:
+    description: Internal server error
+    schema:
+      $ref: '#/definitions/error-response'
   conflict:
     description: Duplicate Resource
     schema:
@@ -1504,19 +1510,14 @@ definitions:
         alias: "v1Models"
       type: "CreateGithubOrganization"
 
-  signature:
-    x-go-type:
-      import:
-        package: "github.com/communitybridge/easycla/cla-backend-go/gen/models"
-        alias: "v1Models"
-      type: "Signature"
+  user:
+    $ref: './common/user.yaml'
 
   signatures:
-    x-go-type:
-      import:
-        package: "github.com/communitybridge/easycla/cla-backend-go/gen/models"
-        alias: "v1Models"
-      type: "Signatures"
+    $ref: './common/signatures.yaml'
+
+  signature:
+    $ref: './common/signature.yaml'
 
   github-org:
     x-go-type:

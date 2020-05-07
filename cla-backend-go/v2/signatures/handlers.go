@@ -5,6 +5,7 @@ package signatures
 
 import (
 	"github.com/communitybridge/easycla/cla-backend-go/gen/v2/models"
+	v1Models "github.com/communitybridge/easycla/cla-backend-go/gen/models"
 	"github.com/communitybridge/easycla/cla-backend-go/utils"
 
 	"github.com/LF-Engineering/lfx-kit/auth"
@@ -18,7 +19,26 @@ import (
 	signatureService "github.com/communitybridge/easycla/cla-backend-go/signatures"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/savaki/dynastore"
+	"github.com/jinzhu/copier"
 )
+
+func v2Signature(src *v1Models.Signature) (*models.Signature,error) {
+	var dst models.Signature
+	err := copier.Copy(&dst,src)
+	if err != nil {
+		return nil, err
+	}
+	return &dst,nil
+}
+
+func v2Signatures(src *v1Models.Signatures) (*models.Signatures,error) {
+	var dst models.Signatures
+	err := copier.Copy(&dst,src)
+	if err != nil {
+		return nil, err
+	}
+	return &dst,nil
+}
 
 // Configure setups handlers on api with service
 func Configure(api *operations.EasyclaAPI, service signatureService.SignatureService, sessionStore *dynastore.Store, eventsService events.Service) {
@@ -35,8 +55,12 @@ func Configure(api *operations.EasyclaAPI, service signatureService.SignatureSer
 		if signature == nil {
 			return signatures.NewGetSignatureNotFound()
 		}
+		resp, err := v2Signature(signature)
+		if err != nil {
+			return signatures.NewGetCompanySignaturesBadRequest()
+		}
 
-		return signatures.NewGetSignatureOK().WithPayload(*signature)
+		return signatures.NewGetSignatureOK().WithPayload(resp)
 	})
 
 	// Retrieve GitHub Whitelist Entries
@@ -173,8 +197,12 @@ func Configure(api *operations.EasyclaAPI, service signatureService.SignatureSer
 				params.ProjectID, err)
 			return signatures.NewGetProjectSignaturesBadRequest().WithPayload(errorResponse(err))
 		}
+		resp, err := v2Signatures(projectSignatures)
+		if err != nil {
+			return signatures.NewGetCompanySignaturesBadRequest()
+		}
 
-		return signatures.NewGetProjectSignaturesOK().WithPayload(*projectSignatures)
+		return signatures.NewGetProjectSignaturesOK().WithPayload(resp)
 	})
 
 	// Get Project Company Signatures
@@ -192,7 +220,11 @@ func Configure(api *operations.EasyclaAPI, service signatureService.SignatureSer
 			return signatures.NewGetProjectCompanySignaturesBadRequest().WithPayload(errorResponse(err))
 		}
 
-		return signatures.NewGetProjectCompanySignaturesOK().WithPayload(*projectSignatures)
+		resp, err := v2Signatures(projectSignatures)
+		if err != nil {
+			return signatures.NewGetCompanySignaturesBadRequest()
+		}
+		return signatures.NewGetProjectCompanySignaturesOK().WithPayload(resp)
 	})
 
 	// Get Employee Project Company Signatures
@@ -210,7 +242,11 @@ func Configure(api *operations.EasyclaAPI, service signatureService.SignatureSer
 			return signatures.NewGetProjectCompanyEmployeeSignaturesBadRequest().WithPayload(errorResponse(err))
 		}
 
-		return signatures.NewGetProjectCompanyEmployeeSignaturesOK().WithPayload(*projectSignatures)
+		resp, err := v2Signatures(projectSignatures)
+		if err != nil {
+			return signatures.NewGetCompanySignaturesBadRequest()
+		}
+		return signatures.NewGetProjectCompanyEmployeeSignaturesOK().WithPayload(resp)
 	})
 
 	// Get Company Signatures
@@ -228,7 +264,11 @@ func Configure(api *operations.EasyclaAPI, service signatureService.SignatureSer
 			return signatures.NewGetCompanySignaturesBadRequest().WithPayload(errorResponse(err))
 		}
 
-		return signatures.NewGetCompanySignaturesOK().WithPayload(*companySignatures)
+		resp, err := v2Signatures(companySignatures)
+		if err != nil {
+			return signatures.NewGetCompanySignaturesBadRequest()
+		}
+		return signatures.NewGetCompanySignaturesOK().WithPayload(resp)
 	})
 
 	// Get User Signatures
@@ -245,7 +285,11 @@ func Configure(api *operations.EasyclaAPI, service signatureService.SignatureSer
 			return signatures.NewGetUserSignaturesBadRequest().WithPayload(errorResponse(err))
 		}
 
-		return signatures.NewGetUserSignaturesOK().WithPayload(*userSignatures)
+		resp, err := v2Signatures(userSignatures)
+		if err != nil {
+			return signatures.NewGetCompanySignaturesBadRequest().WithPayload(errorResponse(err))
+		}
+		return signatures.NewGetUserSignaturesOK().WithPayload(resp)
 	})
 }
 
