@@ -1317,31 +1317,7 @@ parameters:
 
 definitions:
   version:
-    type: object
-    x-nullable: false
-    title: Version
-    description: Version Information
-    properties:
-      version:
-        type: string
-      commit:
-        type: string
-      branch:
-        type: string
-      buildDate:
-        type: string
-    required:
-      - version
-      - commit
-      - branch
-      - buildDate
-    # Ask go-swagger to reuse a predefined types generated from v1 to satisfy the definition in the swagger spec.
-    # Imported package and type alias may be specified as options
-    x-go-type:
-      import:
-        package: "github.com/communitybridge/easycla/cla-backend-go/gen/models"
-        alias: "v1Health"
-      type: "Version"
+    $ref: './common/version.yaml'
 
   health:
     type: object
