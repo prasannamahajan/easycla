@@ -1,6 +1,10 @@
 package events
 
 import (
+	"fmt"
+
+	"github.com/labstack/gommon/log"
+
 	"github.com/LF-Engineering/lfx-kit/auth"
 	v1Company "github.com/communitybridge/easycla/cla-backend-go/company"
 	v1Events "github.com/communitybridge/easycla/cla-backend-go/events"
@@ -23,7 +27,7 @@ func v2EventList(eventList *v1Models.EventList) (*models.EventList, error) {
 }
 func isUserAuthorizedForOrganization(user *auth.User, externalCompanyID string) bool {
 	if !user.Admin {
-		if !user.Allowed || !user.IsUserAuthorized(auth.Organization, externalCompanyID) {
+		if !user.Allowed || !user.IsUserAuthorizedForOrganizationScope(externalCompanyID) {
 			return false
 		}
 	}
@@ -31,7 +35,7 @@ func isUserAuthorizedForOrganization(user *auth.User, externalCompanyID string) 
 }
 
 // Configure setups handlers on api with service
-func Configure(api *operations.EasyclaAPI, service v1Events.Service, v1CompanyRepo v1Company.IRepository) {
+func Configure(api *operations.EasyclaAPI, service v1Events.Service, v1CompanyRepo v1Company.IRepository, v2EventsService Service) {
 	api.EventsGetRecentEventsHandler = events.GetRecentEventsHandlerFunc(
 		func(params events.GetRecentEventsParams, user *auth.User) middleware.Responder {
 			result, err := service.GetRecentEvents(params.PageSize)
@@ -49,23 +53,36 @@ func Configure(api *operations.EasyclaAPI, service v1Events.Service, v1CompanyRe
 		func(params events.GetRecentCompanyProjectEventsParams, authUser *auth.User) middleware.Responder {
 			utils.SetAuthUserProperties(authUser, params.XUSERNAME, params.XEMAIL)
 			if !isUserAuthorizedForOrganization(authUser, params.CompanySFID) {
-				return events.NewGetRecentCompanyProjectEventsForbidden()
+				msg := fmt.Sprintf("user %s does not have access of %s", utils.StringValue(params.XUSERNAME), params.CompanySFID)
+				log.Warn(msg)
+				return events.NewGetRecentCompanyProjectEventsForbidden().WithPayload(&models.ErrorResponse{
+					Code:    "403",
+					Message: msg,
+				})
 			}
 			comp, err := v1CompanyRepo.GetCompanyByExternalID(params.CompanySFID)
 			if err != nil {
 				if err == v1Company.ErrCompanyDoesNotExist {
-					return events.NewGetRecentCompanyProjectEventsNotFound()
+					return events.NewGetRecentCompanyProjectEventsNotFound().WithPayload(&models.ErrorResponse{
+						Code:    "404",
+						Message: fmt.Sprintf("company %s not exist in cla database", params.CompanySFID),
+					})
 				}
-			}
-			result, err := service.GetRecentEventsForCompanyProject(comp.CompanyID, params.ProjectSFID, params.PageSize)
-			if err != nil {
-				return events.NewGetRecentCompanyProjectEventsBadRequest().WithPayload(errorResponse(err))
-			}
-			resp, err := v2EventList(result)
-			if err != nil {
 				return events.NewGetRecentCompanyProjectEventsInternalServerError().WithPayload(errorResponse(err))
 			}
-			return events.NewGetRecentCompanyProjectEventsOK().WithPayload(resp)
+			result, err := v2EventsService.GetRecentEventsForCompanyProject(comp.CompanyID, params.ProjectSFID, params.PageSize)
+			if err != nil {
+				if err == ErrProjectNotFound {
+					msg := fmt.Sprintf("invalid projectSFID: %s", params.ProjectSFID)
+					log.Warn(msg)
+					return events.NewGetRecentCompanyProjectEventsBadRequest().WithPayload(&models.ErrorResponse{
+						Code:    "400",
+						Message: msg,
+					})
+				}
+				return events.NewGetRecentCompanyProjectEventsInternalServerError().WithPayload(errorResponse(err))
+			}
+			return events.NewGetRecentCompanyProjectEventsOK().WithPayload(result)
 		})
 }
 
